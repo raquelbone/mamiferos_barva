@@ -1,13 +1,20 @@
 ---
-title: "mamiferos_barva"
-author: "Raquel Bone"
-date: "11/30/2020"
-output: html_document
+title: "Variación estacional en el número de especies de mamíferos terrestres en el Volcán Barva-Caribe"
+author: "Raquel Bone Guzmán"
+date: "12/3/2020"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+bibliography: library.bib
+csl: conservation-biology.csl
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+**Repositorio en GitHub**: https://github.com/raquelbone/mamiferos_barva.git
 
 ## 1. ¿Cuál es la pregunta específica de investigación?
 
@@ -20,7 +27,7 @@ Para realizar el análisis primero vamos a extraer y ordenar la base de datos, y
 ## 2. ¿Cuáles son las variables relevantes y cuál es su relación, conocida y/o hipotética?
 
 Queremos saber si nuestra variable respuesta, la riqueza de especies de mamíferos terrestres (R) presentes en el gradiente del Volcán Barva-Caribe, varía estacionalmente según las condiciones ambientales. 
-Evaluaremos esta estacionalidad por mes (M) de enero a agosto, tomando en cuenta la variación de la temperatura (TE) y la fase lunar (L), la cual tiene un marcado efecto en los patrones de actividad de los mamíferos nocturnos y catemerales (CITA). Tomaremos en cuenta que cada año (A) estos factores son cambiantes o pueden variar para cada mes. También consideramos que, dependiendo del año, la riqueza de especies de mamíferos encontradas en un mismo mes (e.g. enero) puede ser variable.
+Evaluaremos esta estacionalidad por mes (M) de enero a agosto, tomando en cuenta la variación de la temperatura (TE) y la fase lunar (L), la cual tiene un marcado efecto en los patrones de actividad de los mamíferos nocturnos y catemerales [@Botts2020]. Tomaremos en cuenta que cada año (A) estos factores son cambiantes o pueden variar para cada mes. También consideramos que, dependiendo del año (factor aleatorio), la riqueza de especies de mamíferos encontradas en un mismo mes (factor fijo, e.g. enero) puede ser variable.
 
 A continuación un diagrama causal de hipótesis para aclarar las relaciones entre las variables de interés, de acuerdo a las abreviaciones utilizadas en el párrafo anterior:
 
@@ -41,7 +48,7 @@ ggdag(dagified, layout = "circle") + theme_dag()
 
 ## 3. ¿De dónde vienen los datos?
 
-Cómo se mencionó en el apartado 1, estos son datos reales tomados por el equipo de TEAM quienes colaboran con la ciencia abierta y suben a la web su base de datos para que pueda ser utilizada por investigadores y estudiantes. 
+Cómo se mencionó en el apartado 1, estos son datos reales tomados por el equipo de TEAM (http://www.teamnetwork.org) quienes colaboran con la ciencia abierta y suben a la web su base de datos para que pueda ser utilizada por investigadores y estudiantes. 
 
 A continuación la preparación de la base de datos para los análisis:
 
@@ -136,7 +143,7 @@ pairs.panels(barva2,
 ```
 
 
-Observamos que la riqueza de especies de mamíferos al ser un conteo, parece ajustarse a una distribución Poisson, además vemos que hay una relacion no lineal con temperatura.
+Observamos que la riqueza de especies de mamíferos al ser un conteo, parece ajustarse a una distribución Poisson, además vemos que posiblemente hay relaciones no lineales con las variables predictoras.
 
 Para determinar si un GAMM es más apropiado, vamos a realizar también un GLMM y determinaremos el modelo con mejor ajuste con el criterio de información de Akaike (AIC).
 
@@ -150,6 +157,7 @@ m0 <- glmer(riqsp ~ 1 + (1 | año), data = barva2, family = poisson(link = "log"
 summary(m0)
 plot(ranef(m0))
 
+#Modelo con predictores
 m1 <- glmer(riqsp ~ mes + luna + temp + (1 | año), data = barva2, family = poisson(link = "log"))
 summary(m1)
 
@@ -169,6 +177,7 @@ library(gamm4)
 mg0 <- gamm4(riqsp ~ 1, data = barva2, family = poisson(link = "log"),
               random = ~ (1 | año))
 
+# Modelo con predictores
 mg1 <- gamm4(riqsp ~ mes + luna + s(temp), data = barva2, family = poisson(link = "log"),
               random = ~ (1 | año))
 summary(mg1$gam)
@@ -205,7 +214,7 @@ Por último, utilizando nuestro modelo mg2 realizamos predicciones de la riqueza
 
 ## PREDICCIONES DEL MODELO mg2 CON MEJOR AJUSTE
 
-# para la riqueza de especies de mamíferos en el Barva
+# Para la riqueza de especies de mamíferos en el Barva
 
 pm1 <- plot_model(mg2$gam, type = "pred", terms = c("mes", "temp"), title= "", 
                    colors = c("turquoise1", "olivedrab2", "red3"), line.size = 1)+ 
@@ -223,4 +232,28 @@ pm3 <- plot_model(mg2$gam, type = "pred", terms = c("temp"), title= "",
 pm3
 
 ```
+
+## 5. Interpretación de resultados
+
+Encontramos una variación estacional, medida por mes, de la riqueza de especies de mamíferos presentes en el gradiente del Volcán Barva-Caribe. Según nuestro mejor modelo, se observa el mayor efecto en los meses de julio (estimado=-0.69) y agosto (estimado=-0.69), con una disminución en el número de especies presentes en el Barva, lo cual podría asociarse al inicio de los meses más lluviosos del año. Muchos mamíferos herbívoros suelen migrar estacionalmente dependiendo de las precipitaciones y la consiguiente disponibilidad de alimento, mientras que los depredadores siempre seguirán a sus presas [@Altrichter2000]. Además, en este modelo confirmamos la importancia de un factor ambiental como temperatura para la presencia de especies de mamíferos. Cómo podemos observar en nuestro gráfico predictivo, temperaturas intermedias entre 20°C-25°C favorecen el número de especies. En cuanto a la fase lunar, si bien no mostró suficiente peso para incluirse en el mejor modelo, se ha reportado ampliamente su influencia sobre los patrones de actividad y por lo tanto sobre la posibilidad de detección de mamíferos nocturnos y catemerales [@Botts2020]. No obstante, este modelo sólo explica el 16% de los datos y cabe resaltar que hay variables ambientales de peso que no se incluyeron como precipitación y elevación, además de variables antropogénicas como cercanía a carreteras, cultivos, que pueden tener un efecto crucial en cuanto a la estabilidad y movimiento de estas especies de mamíferos medianas y grandes que por sus requerimientos ecológicos (territorio, reproducción, alimentación) necesitan movilizarse periódicamente a través de extensiones considerables de bosque [@Bogoni2020].
+
+Agradecimiento y con el debido reconocimiento de:
+
+Tropical Ecology, Assessment and Monitoring (TEAM) Network
+Conservation International
+2011 Crystal Drive, Suite 500
+Arlington, Virginia 22202, United States
+(703) 341-2400 (voice)
+http://www.teamnetwork.org
+
+
+**Información de la sesión**
+
+```{r, echo=FALSE}
+sessionInfo()
+```
+
+
+**Referencias**
+
 
