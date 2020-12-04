@@ -80,9 +80,9 @@ head(barva2)
 barva2 <- barva2[order(barva2$año, barva2$mes), ]
 head(barva2)
 
-## EVALUACION DE SUPUESTOS PARA PRUEBAS
+## EVALUACION DE SUPUESTOS PARA PRUEBAS Y MODELOS
 
-# chequeamos distribucion de datos de conteo
+# chequeamos distribucion de datos
 hist(barva2$riqsp)
 qqnorm(barva2$riqsp)
 
@@ -97,7 +97,9 @@ pairs.panels(barva2,
              ellipses = F)
 
 
-# Modelo nulo GLMM (con distribucion Poisson)
+## Modelos GLMM (con distribucion Poisson)
+
+# Modelo nulo
 m0 <- glmer(riqsp ~ 1 + (1 | año), data = barva2, family = poisson(link = "log"))
 summary(m0)
 plot(ranef(m0))
@@ -109,14 +111,12 @@ p1 <- plot_model(m1, type = "re", title= "Efecto Aleatorio", colors = c("olivedr
                    line.size = 1)+ xlab("Año") + theme_classic()
 p1
 
-#Evaluacion de modelos con criterio de informacion de Akaike
-
 AIC(m0, m1) #elegimos el modelo con menor valor de AIC ya que es el que mejor se ajusta a los datos
 
 library(blmeco)
 dispersion_glmer(m1) #no hay sobredispersion
 
-## EVALUACION DE MODELOS GAMM
+## Modelos GAMM (con distribucion Poisson)
 
 # Modelo nulo
 library(gamm4)
@@ -129,9 +129,9 @@ summary(mg1$gam)
 
 AIC(m1, mg0$mer, mg1$mer)
 
-# Nos quedamos con el gamm mg1
+# Nos quedamos con el GAMM mg1
 
-# Ahora buscamos el mejor modelo
+## Ahora buscamos el mejor modelo
 
 mg2 <- gamm4(riqsp ~ mes + s(temp), data = barva2, family = poisson(link = "log"),
               random = ~ (1 | año))
@@ -145,7 +145,9 @@ AIC(mg1$mer, mg2$mer, mg3$mer, mg4$mer)
 # Elegimos el modelo 2 con mes y temp
 summary(mg2$gam)
 
-# PREDCCION DEL MODELO
+## PREDICCIONES DEL MODELO mg2 CON MEJOR AJUSTE
+
+# para la riqueza de especies de mamíferos en el Barva
 
 pm1 <- plot_model(mg2$gam, type = "pred", terms = c("mes", "temp"), title= "", 
                    colors = c("turquoise1", "olivedrab2", "red3"), line.size = 1)+ 
